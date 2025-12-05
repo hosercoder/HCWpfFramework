@@ -38,6 +38,13 @@ namespace HCWpfFramework.ViewModels
 
             // Subscribe to services
             SubscribeToServices();
+            
+            // Initialize current theme name
+            if (ThemeService?.CurrentTheme != null)
+            {
+                CurrentThemeName = ThemeService.CurrentTheme.Name;
+                System.Diagnostics.Debug.WriteLine($"MainViewModelBase: Initial theme name set to {CurrentThemeName}");
+            }
         }
 
         #region Properties
@@ -58,6 +65,13 @@ namespace HCWpfFramework.ViewModels
         {
             get => _currentLayoutType;
             set => SetProperty(ref _currentLayoutType, value);
+        }
+        
+        private string _currentThemeName = "Light";
+        public string CurrentThemeName
+        {
+            get => _currentThemeName;
+            set => SetProperty(ref _currentThemeName, value);
         }
 
         public IThemeService GetThemeService => ThemeService;
@@ -96,6 +110,10 @@ namespace HCWpfFramework.ViewModels
         public ICommand LoadLayoutCommand { get; private set; } = null!;
         public ICommand ExitCommand { get; private set; } = null!;
         public ICommand TestLayoutCommand { get; private set; } = null!;
+        public ICommand ForceLightThemeCommand { get; private set; } = null!;
+        public ICommand ForceDarkThemeCommand { get; private set; } = null!;
+        public ICommand SyncThemeSelectorCommand { get; private set; } = null!;
+        public ICommand RefreshThemeStatusCommand { get; private set; } = null!;
 
         #endregion
 
@@ -233,6 +251,10 @@ namespace HCWpfFramework.ViewModels
             LoadLayoutCommand = new RelayCommand(ExecuteLoadLayout);
             ExitCommand = new RelayCommand(ExecuteExit);
             TestLayoutCommand = new RelayCommand(TestFrameworkFunctionality);
+            ForceLightThemeCommand = new RelayCommand(ExecuteForceLightTheme);
+            ForceDarkThemeCommand = new RelayCommand(ExecuteForceDarkTheme);
+            SyncThemeSelectorCommand = new RelayCommand(ExecuteSyncThemeSelector);
+            RefreshThemeStatusCommand = new RelayCommand(ExecuteRefreshThemeStatus);
 
             // Initialize custom commands
             InitializeCustomCommands();
@@ -341,6 +363,156 @@ namespace HCWpfFramework.ViewModels
             StatusMessage = "Open command executed";
             MessageService.SendMessage(MessageType.Information, ViewModelId, "Open command executed");
         }
+        
+        /// <summary>
+        /// Force Light theme for testing
+        /// </summary>
+        private void ExecuteForceLightTheme()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("MainViewModelBase: Force Light Theme command executed");
+                if (ThemeService != null)
+                {
+                    ThemeService.SetTheme(ThemeType.Light);
+                    CurrentThemeName = "Light";
+                    StatusMessage = "Forced Light theme";
+                    System.Diagnostics.Debug.WriteLine($"MainViewModelBase: CurrentThemeName updated to {CurrentThemeName}");
+                }
+                else
+                {
+                    StatusMessage = "ThemeService is null - cannot change theme";
+                    System.Diagnostics.Debug.WriteLine("MainViewModelBase: ThemeService is null");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error forcing light theme: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"MainViewModelBase: Error forcing light theme: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Force Dark theme for testing
+        /// </summary>
+        private void ExecuteForceDarkTheme()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("MainViewModelBase: Force Dark Theme command executed");
+                if (ThemeService != null)
+                {
+                    ThemeService.SetTheme(ThemeType.Dark);
+                    CurrentThemeName = "Dark";
+                    StatusMessage = "Forced Dark theme";
+                    System.Diagnostics.Debug.WriteLine($"MainViewModelBase: CurrentThemeName updated to {CurrentThemeName}");
+                }
+                else
+                {
+                    StatusMessage = "ThemeService is null - cannot change theme";
+                    System.Diagnostics.Debug.WriteLine("MainViewModelBase: ThemeService is null");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error forcing dark theme: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"MainViewModelBase: Error forcing dark theme: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Sync Theme Selector for testing
+        /// </summary>
+        private void ExecuteSyncThemeSelector()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("MainViewModelBase: Sync Theme Selector command executed");
+                
+                // Try to find and sync theme selectors in the application
+                var app = System.Windows.Application.Current;
+                if (app != null)
+                {
+                    foreach (System.Windows.Window window in app.Windows)
+                    {
+                        try
+                        {
+                            SyncThemeSelectorsInWindow(window);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error syncing window {window.GetType().Name}: {ex.Message}");
+                        }
+                    }
+                }
+                
+                StatusMessage = "Theme selector sync attempted";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error syncing theme selector: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"MainViewModelBase: Error syncing theme selector: {ex.Message}");
+            }
+        }
+        
+        private void SyncThemeSelectorsInWindow(System.Windows.Window window)
+        {
+            // Recursively find ThemeSelector controls and sync them
+            SyncThemeSelectorsInElement(window);
+        }
+        
+        private void SyncThemeSelectorsInElement(System.Windows.DependencyObject element)
+        {
+            try
+            {
+                if (element is HCWpfFramework.Controls.ThemeSelector themeSelector)
+                {
+                    System.Diagnostics.Debug.WriteLine("Found ThemeSelector, calling ManualSync");
+                    themeSelector.ManualSync();
+                    themeSelector.DiagnoseThemeSelector();
+                }
+                
+                // Recursively check children
+                for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); i++)
+                {
+                    var child = System.Windows.Media.VisualTreeHelper.GetChild(element, i);
+                    SyncThemeSelectorsInElement(child);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in SyncThemeSelectorsInElement: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Refresh theme status in status bar
+        /// </summary>
+        private void ExecuteRefreshThemeStatus()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("MainViewModelBase: Refresh Theme Status command executed");
+                
+                if (ThemeService != null)
+                {
+                    CurrentThemeName = ThemeService.CurrentTheme.Name;
+                    StatusMessage = $"Theme status refreshed: {CurrentThemeName}";
+                    System.Diagnostics.Debug.WriteLine($"MainViewModelBase: CurrentThemeName refreshed to {CurrentThemeName}");
+                }
+                else
+                {
+                    CurrentThemeName = "Unknown";
+                    StatusMessage = "ThemeService is null - cannot refresh theme status";
+                    System.Diagnostics.Debug.WriteLine("MainViewModelBase: ThemeService is null");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error refreshing theme status: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"MainViewModelBase: Error refreshing theme status: {ex.Message}");
+            }
+        }
 
         private void HandleMessage(IMessage message)
         {
@@ -352,6 +524,10 @@ namespace HCWpfFramework.ViewModels
 
         private void OnFrameworkThemeChanged(object? sender, ThemeChangedEventArgs e)
         {
+            // Update the current theme name for binding
+            CurrentThemeName = e.NewTheme.Name;
+            System.Diagnostics.Debug.WriteLine($"MainViewModelBase: Theme changed to {e.NewTheme.Name}, CurrentThemeName updated");
+            
             OnThemeChanged(e);
         }
 
@@ -412,11 +588,30 @@ namespace HCWpfFramework.ViewModels
                 // Test theme change if available
                 if (ThemeService != null)
                 {
-                    System.Diagnostics.Debug.WriteLine("Testing theme toggle...");
+                    System.Diagnostics.Debug.WriteLine("Testing theme system...");
+                    System.Diagnostics.Debug.WriteLine($"Current Theme: {ThemeService.CurrentTheme.Name} ({ThemeService.CurrentTheme.Type})");
+                    System.Diagnostics.Debug.WriteLine($"Available Themes: {string.Join(", ", ThemeService.AvailableThemes.Select(t => t.Name))}");
+                    
                     var currentTheme = ThemeService.CurrentTheme.Type;
-                    var newTheme = currentTheme == ThemeType.Light ? ThemeType.Dark : ThemeType.Light;
-                    ThemeService.SetTheme(newTheme);
-                    System.Diagnostics.Debug.WriteLine($"Theme changed to: {ThemeService.CurrentTheme.Type}");
+                    System.Diagnostics.Debug.WriteLine($"Testing theme change from {currentTheme}...");
+                    
+                    // Test switching to Dark
+                    ThemeService.SetTheme(ThemeType.Dark);
+                    System.Threading.Thread.Sleep(500);
+                    System.Diagnostics.Debug.WriteLine($"After Dark - Current Theme: {ThemeService.CurrentTheme.Type}");
+                    
+                    // Test switching to Light
+                    ThemeService.SetTheme(ThemeType.Light);
+                    System.Threading.Thread.Sleep(500);
+                    System.Diagnostics.Debug.WriteLine($"After Light - Current Theme: {ThemeService.CurrentTheme.Type}");
+                    
+                    // Return to original
+                    ThemeService.SetTheme(currentTheme);
+                    System.Diagnostics.Debug.WriteLine($"Returned to original theme: {ThemeService.CurrentTheme.Type}");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("ThemeService is null - cannot test themes");
                 }
                 
                 StatusMessage = "Framework functionality test completed - check debug output";

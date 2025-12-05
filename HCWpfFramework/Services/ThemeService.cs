@@ -155,33 +155,58 @@ namespace HCWpfFramework.Services
 
         public void SetTheme(ThemeType themeType)
         {
+            System.Diagnostics.Debug.WriteLine($"ThemeService: SetTheme called with type {themeType}");
+            
             if (_themes.TryGetValue(themeType, out var theme))
             {
+                System.Diagnostics.Debug.WriteLine($"ThemeService: Found theme {theme.Name} for type {themeType}");
                 SetTheme(theme);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"ThemeService: No theme found for type {themeType}");
             }
         }
 
         public void SetTheme(Theme theme)
         {
-            if (theme == null) return;
+            if (theme == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ThemeService: SetTheme called with null theme");
+                return;
+            }
 
+            System.Diagnostics.Debug.WriteLine($"ThemeService: Setting theme to {theme.Name} ({theme.Type})");
+            
             var oldTheme = _currentTheme;
             _currentTheme = theme;
 
             ApplyThemeToApplication(theme);
             OnThemeChanged(new ThemeChangedEventArgs(theme, oldTheme));
             SaveThemePreference();
+            
+            System.Diagnostics.Debug.WriteLine($"ThemeService: Theme change completed - Current: {_currentTheme.Name}");
         }
 
         private void ApplyThemeToApplication(Theme theme)
         {
+            System.Diagnostics.Debug.WriteLine($"ThemeService: ApplyThemeToApplication started for {theme.Name}");
+            
             var app = Application.Current;
-            if (app?.Resources == null) return;
+            if (app?.Resources == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ThemeService: Application.Current or Resources is null");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"ThemeService: Found {theme.Resources.Count} resources to apply");
 
             // Clear existing theme resources
             var keysToRemove = app.Resources.Keys.Cast<object>()
                 .Where(key => key.ToString()?.EndsWith("Brush") == true)
                 .ToList();
+
+            System.Diagnostics.Debug.WriteLine($"ThemeService: Removing {keysToRemove.Count} existing brush resources");
 
             foreach (var key in keysToRemove)
             {
@@ -192,6 +217,7 @@ namespace HCWpfFramework.Services
             }
 
             // Apply new theme resources
+            int appliedCount = 0;
             foreach (var resource in theme.Resources)
             {
                 try
@@ -204,11 +230,13 @@ namespace HCWpfFramework.Services
                         if (brush != null)
                         {
                             app.Resources[resource.Key] = brush;
+                            appliedCount++;
                         }
                     }
                     else
                     {
                         app.Resources[resource.Key] = resource.Value;
+                        appliedCount++;
                     }
                 }
                 catch (Exception ex)
@@ -216,8 +244,11 @@ namespace HCWpfFramework.Services
                     System.Diagnostics.Debug.WriteLine($"Failed to apply theme resource {resource.Key}: {ex.Message}");
                 }
             }
+            
+            System.Diagnostics.Debug.WriteLine($"ThemeService: Applied {appliedCount} theme resources successfully");
 
             // Force refresh of all windows
+            System.Diagnostics.Debug.WriteLine($"ThemeService: Refreshing {app.Windows.Count} windows");
             foreach (Window window in app.Windows)
             {
                 try
@@ -230,6 +261,8 @@ namespace HCWpfFramework.Services
                     System.Diagnostics.Debug.WriteLine($"Failed to refresh window: {ex.Message}");
                 }
             }
+            
+            System.Diagnostics.Debug.WriteLine("ThemeService: ApplyThemeToApplication completed");
         }
 
         public Theme GetTheme(ThemeType themeType)

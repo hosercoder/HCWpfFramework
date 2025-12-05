@@ -43,6 +43,11 @@ Style="{StaticResource ThemedWindowStyle}">
             
             <MenuItem Header="Debug">
                 <MenuItem Header="Test Framework" Command="{Binding TestLayoutCommand}"/>
+                <Separator/>
+                <MenuItem Header="Force Light Theme" Command="{Binding ForceLightThemeCommand}"/>
+                <MenuItem Header="Force Dark Theme" Command="{Binding ForceDarkThemeCommand}"/>
+                <MenuItem Header="Sync Theme Selector" Command="{Binding SyncThemeSelectorCommand}"/>
+                <MenuItem Header="Refresh Theme Status" Command="{Binding RefreshThemeStatusCommand}"/>
             </MenuItem>
 
             <!-- Theme Selector in Menu -->
@@ -194,7 +199,7 @@ Style="{StaticResource ThemedWindowStyle}">
                     <TextBlock Text="{Binding CurrentLayoutType}" Style="{StaticResource ThemedTextBlockStyle}" FontWeight="SemiBold" Foreground="Red"/>
                     <Rectangle Width="15" Height="1" Fill="Transparent"/>
                     <TextBlock Text="Theme: " Style="{StaticResource ThemedSecondaryTextBlockStyle}"/>
-                    <TextBlock Text="{Binding GetThemeService.CurrentTheme.Name}" Style="{StaticResource ThemedTextBlockStyle}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CurrentThemeName}" Style="{StaticResource ThemedTextBlockStyle}" FontWeight="SemiBold" Foreground="Green"/>
                     <!-- Additional content area for application-specific status -->
                     <ContentPresenter Content="{Binding CustomStatusContent}" Margin="15,0,0,0"/>
                 </StackPanel>
